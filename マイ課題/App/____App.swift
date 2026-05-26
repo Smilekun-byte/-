@@ -17,10 +17,8 @@ struct マイ課題App: App {
         }
 
         do {
-            // MigrationPlan を使って V1 → V2 ライトウェイトマイグレーションを自動適用
             return try ModelContainer(
                 for: Assignment.self, Course.self,
-                migrationPlan: MaiKadaiMigrationPlan.self,
                 configurations: config
             )
         } catch {
