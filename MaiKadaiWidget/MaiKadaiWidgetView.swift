@@ -77,44 +77,97 @@ private struct MediumMatrixWidgetView: View {
     }
 }
 
-// MARK: - Matrix 散布図（Canvas で描画）
+// MARK: - Matrix 散布図（Canvas + テキストオーバーレイ）
 
 private struct MatrixCanvasView: View {
     let snapshots: [AssignmentSnapshot]
     private let maxDays: Double = 28
+    private let padL: CGFloat = 12   // 左（矢印用）
+    private let padR: CGFloat = 4
+    private let padT: CGFloat = 8    // 上（矢印先端用）
+    private let padB: CGFloat = 14   // 下（横軸ラベル用）
 
     var body: some View {
-        Canvas { ctx, size in
-            let now = Date()
-            let pad: CGFloat = 4
-            let cw = size.width - pad * 2
-            let ch = size.height - pad * 2
+        GeometryReader { geo in
+            let size = geo.size
+            let cw = size.width - padL - padR
+            let ch = size.height - padT - padB
 
-            // グリッド線
-            for frac in [0.33, 0.67] as [Double] {
-                let y = pad + CGFloat(frac) * ch
-                var p = Path(); p.move(to: CGPoint(x: pad, y: y))
-                p.addLine(to: CGPoint(x: size.width - pad, y: y))
-                ctx.stroke(p, with: .color(.gray.opacity(0.15)), lineWidth: 0.5)
-            }
-            for frac in [0.25, 0.5, 0.75] as [Double] {
-                let x = pad + CGFloat(frac) * cw
-                var p = Path(); p.move(to: CGPoint(x: x, y: pad))
-                p.addLine(to: CGPoint(x: x, y: size.height - pad))
-                ctx.stroke(p, with: .color(.gray.opacity(0.15)), lineWidth: 0.5)
-            }
+            ZStack {
+                // Canvas：グリッド + 矢印 + ドット
+                Canvas { ctx, _ in
+                    let now = Date()
 
-            // タスクドット
-            for snapshot in snapshots.prefix(20) {
-                let days = snapshot.deadline.timeIntervalSince(now) / 86400
-                guard days > 0, days <= maxDays else { continue }
-                let x = pad + CGFloat(days / maxDays) * cw
-                let y = pad + CGFloat(1.0 - snapshot.userPriority) * ch
-                let r: CGFloat = 5
-                ctx.fill(
-                    Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)),
-                    with: .color(urgencyColor(deadline: snapshot.deadline, now: now))
-                )
+                    // グリッド横線
+                    for frac in [0.33, 0.67] as [Double] {
+                        let y = padT + CGFloat(frac) * ch
+                        var p = Path()
+                        p.move(to: CGPoint(x: padL, y: y))
+                        p.addLine(to: CGPoint(x: size.width - padR, y: y))
+                        ctx.stroke(p, with: .color(.gray.opacity(0.15)), lineWidth: 0.5)
+                    }
+
+                    // グリッド縦線
+                    for frac in [0.25, 0.5, 0.75] as [Double] {
+                        let x = padL + CGFloat(frac) * cw
+                        var p = Path()
+                        p.move(to: CGPoint(x: x, y: padT))
+                        p.addLine(to: CGPoint(x: x, y: size.height - padB))
+                        ctx.stroke(p, with: .color(.gray.opacity(0.15)), lineWidth: 0.5)
+                    }
+
+                    // 左端の矢印（下：細 → 上：太）
+                    let arrowX = padL / 2
+                    let segments = 12
+                    for i in 0..<segments {
+                        let t0 = CGFloat(i) / CGFloat(segments)
+                        let t1 = CGFloat(i + 1) / CGFloat(segments)
+                        let y0 = (size.height - padB) - t0 * ch
+                        let y1 = (size.height - padB) - t1 * ch
+                        let lw = CGFloat(0.5) + t1 * CGFloat(1.5)
+                        var seg = Path()
+                        seg.move(to: CGPoint(x: arrowX, y: y0))
+                        seg.addLine(to: CGPoint(x: arrowX, y: y1))
+                        ctx.stroke(seg, with: .color(.secondary.opacity(0.5)), lineWidth: lw)
+                    }
+
+                    // 矢印の先端（上向き三角）
+                    var head = Path()
+                    head.move(to: CGPoint(x: arrowX, y: padT - 2))
+                    head.addLine(to: CGPoint(x: arrowX - 3, y: padT + 6))
+                    head.addLine(to: CGPoint(x: arrowX + 3, y: padT + 6))
+                    head.closeSubpath()
+                    ctx.fill(head, with: .color(.secondary.opacity(0.5)))
+
+                    // タスクドット（半径 7）
+                    for snapshot in snapshots.prefix(30) {
+                        let days = snapshot.deadline.timeIntervalSince(now) / 86400
+                        guard days > 0, days <= maxDays else { continue }
+                        let x = padL + CGFloat(days / maxDays) * cw
+                        let y = padT + CGFloat(1.0 - snapshot.userPriority) * ch
+                        let r: CGFloat = 7
+                        ctx.fill(
+                            Path(ellipseIn: CGRect(x: x - r, y: y - r,
+                                                   width: r * 2, height: r * 2)),
+                            with: .color(urgencyColor(deadline: snapshot.deadline, now: now))
+                        )
+                    }
+                }
+
+                // 横軸ラベル（Widget 下端）
+                let xLabels: [(Double, String)] = [
+                    (0.0, "今日"), (0.25, "1週"), (0.5, "2週"), (0.75, "3週"), (1.0, "4週")
+                ]
+                ForEach(0..<xLabels.count, id: \.self) { i in
+                    let (ratio, label) = xLabels[i]
+                    Text(label)
+                        .font(.system(size: 7))
+                        .foregroundStyle(.secondary)
+                        .position(
+                            x: padL + CGFloat(ratio) * cw,
+                            y: size.height - padB / 2
+                        )
+                }
             }
         }
     }

@@ -93,7 +93,7 @@ class AssignmentViewModel: ObservableObject {
         )
         guard let all = try? context.fetch(descriptor) else { return }
 
-        let snapshots = all.prefix(10).map { a in
+        let snapshots = all.prefix(30).map { a in
             AssignmentSnapshot(
                 id: a.uid,
                 cleanTitle: a.cleanTitle,
