@@ -12,13 +12,16 @@ struct DeadlineEntry: TimelineEntry {
         snapshots: [
             AssignmentSnapshot(id: "1", cleanTitle: "線形代数レポート",
                                deadline: Date().addingTimeInterval(86400 * 2),
-                               isMidnightDeadline: false),
+                               isMidnightDeadline: false, userPriority: 0.9),
             AssignmentSnapshot(id: "2", cleanTitle: "英語ライティング",
                                deadline: Date().addingTimeInterval(86400),
-                               isMidnightDeadline: true),
+                               isMidnightDeadline: true, userPriority: 0.6),
             AssignmentSnapshot(id: "3", cleanTitle: "プログラミング課題",
-                               deadline: Date().addingTimeInterval(86400 * 5),
-                               isMidnightDeadline: false),
+                               deadline: Date().addingTimeInterval(86400 * 12),
+                               isMidnightDeadline: false, userPriority: 0.3),
+            AssignmentSnapshot(id: "4", cleanTitle: "物理レポート",
+                               deadline: Date().addingTimeInterval(86400 * 20),
+                               isMidnightDeadline: false, userPriority: 0.7),
         ]
     )
 }

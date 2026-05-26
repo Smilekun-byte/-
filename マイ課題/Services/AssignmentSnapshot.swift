@@ -7,6 +7,26 @@ struct AssignmentSnapshot: Codable, Identifiable {
     let cleanTitle: String
     let deadline: Date
     let isMidnightDeadline: Bool
+    let userPriority: Double    // Matrix Widget の縦軸表示用
+
+    init(id: String, cleanTitle: String, deadline: Date,
+         isMidnightDeadline: Bool, userPriority: Double = 0.5) {
+        self.id = id
+        self.cleanTitle = cleanTitle
+        self.deadline = deadline
+        self.isMidnightDeadline = isMidnightDeadline
+        self.userPriority = userPriority
+    }
+
+    // userPriority が存在しない旧データを安全にデコードするためカスタム実装
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id                = try c.decode(String.self, forKey: .id)
+        cleanTitle        = try c.decode(String.self, forKey: .cleanTitle)
+        deadline          = try c.decode(Date.self,   forKey: .deadline)
+        isMidnightDeadline = try c.decode(Bool.self,  forKey: .isMidnightDeadline)
+        userPriority      = try c.decodeIfPresent(Double.self, forKey: .userPriority) ?? 0.5
+    }
 }
 
 /// App Groups UserDefaults を介してスナップショットを保存・取得する。

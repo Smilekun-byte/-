@@ -98,7 +98,8 @@ class AssignmentViewModel: ObservableObject {
                 id: a.uid,
                 cleanTitle: a.cleanTitle,
                 deadline: a.deadline,
-                isMidnightDeadline: a.isMidnightDeadline
+                isMidnightDeadline: a.isMidnightDeadline,
+                userPriority: a.userPriority
             )
         }
         SharedStore.save(Array(snapshots))

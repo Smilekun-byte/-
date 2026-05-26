@@ -26,6 +26,8 @@ final class Assignment {
     var categoryID: String?
     /// 紐付けられた Course エンティティ（同じ categoryID の Course に自動リンクされる）
     @Relationship var course: Course?
+    /// 主観的重要度（0.0=低、0.5=中、1.0=高）。Matrix View の縦軸に対応。
+    var userPriority: Double = 0.5
 
     // MARK: - 計算プロパティ（DBには保存しない）
 

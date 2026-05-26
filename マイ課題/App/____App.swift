@@ -26,17 +26,31 @@ struct マイ課題App: App {
         }
     }()
 
+    @State private var selectedTab = 0
+
     var body: some Scene {
         WindowGroup {
-            TabView {
+            TabView(selection: $selectedTab) {
                 AssignmentListView()
                     .tabItem { Label("課題", systemImage: "list.bullet") }
+                    .tag(0)
 
                 CustomCalendarView()
                     .tabItem { Label("カレンダー", systemImage: "calendar") }
+                    .tag(1)
+
+                MatrixView()
+                    .tabItem { Label("Matrix", systemImage: "chart.scatter") }
+                    .tag(2)
 
                 SettingsView()
                     .tabItem { Label("設定", systemImage: "gearshape") }
+                    .tag(3)
+            }
+            // maikadai://matrix でタップ時に Matrix タブへジャンプ
+            // ※ Xcode の Info.plist に URL スキーム "maikadai" の登録が必要
+            .onOpenURL { url in
+                if url.host == "matrix" { selectedTab = 2 }
             }
         }
         .modelContainer(sharedModelContainer)

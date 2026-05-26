@@ -10,7 +10,7 @@ struct MaiKadaiWidgetView: View {
     var body: some View {
         switch family {
         case .systemSmall:  SmallWidgetView(entry: entry)
-        case .systemMedium: MediumWidgetView(entry: entry)
+        case .systemMedium: MediumMatrixWidgetView(entry: entry)
         default:            SmallWidgetView(entry: entry)
         }
     }
@@ -56,81 +56,74 @@ private struct SmallWidgetView: View {
     }
 }
 
-// MARK: - Medium（直近3件のリスト）
+// MARK: - Medium（Matrix 散布図・読み取り専用）
 
-private struct MediumWidgetView: View {
+private struct MediumMatrixWidgetView: View {
     let entry: DeadlineEntry
 
-    private var upcoming: [AssignmentSnapshot] {
-        Array(entry.snapshots.prefix(3))
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Label("マイ課題", systemImage: "graduationcap.fill")
+        VStack(alignment: .leading, spacing: 4) {
+            Label("Matrix", systemImage: "chart.scatter")
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
-                .padding(.bottom, 6)
 
-            if upcoming.isEmpty {
-                Spacer()
-                Text("提出予定の課題はありません ☕️")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            } else {
-                ForEach(upcoming) { snapshot in
-                    DeadlineRow(snapshot: snapshot)
-                    if snapshot.id != upcoming.last?.id {
-                        Divider()
-                    }
-                }
-            }
+            MatrixCanvasView(snapshots: entry.snapshots)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(14)
+        .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // タップで App 内の Matrix タブへ遷移（要 URL スキーム登録: maikadai://）
+        .widgetURL(URL(string: "maikadai://matrix"))
     }
 }
 
-// MARK: - 1行コンポーネント
+// MARK: - Matrix 散布図（Canvas で描画）
 
-private struct DeadlineRow: View {
-    let snapshot: AssignmentSnapshot
+private struct MatrixCanvasView: View {
+    let snapshots: [AssignmentSnapshot]
+    private let maxDays: Double = 28
 
     var body: some View {
-        HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    if snapshot.isMidnightDeadline {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                            .imageScale(.small)
-                    }
-                    Text(snapshot.cleanTitle)
-                        .font(.caption.bold())
-                        .lineLimit(1)
-                }
-                Text(snapshot.deadline, style: .date)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+        Canvas { ctx, size in
+            let now = Date()
+            let pad: CGFloat = 4
+            let cw = size.width - pad * 2
+            let ch = size.height - pad * 2
+
+            // グリッド線
+            for frac in [0.33, 0.67] as [Double] {
+                let y = pad + CGFloat(frac) * ch
+                var p = Path(); p.move(to: CGPoint(x: pad, y: y))
+                p.addLine(to: CGPoint(x: size.width - pad, y: y))
+                ctx.stroke(p, with: .color(.gray.opacity(0.15)), lineWidth: 0.5)
+            }
+            for frac in [0.25, 0.5, 0.75] as [Double] {
+                let x = pad + CGFloat(frac) * cw
+                var p = Path(); p.move(to: CGPoint(x: x, y: pad))
+                p.addLine(to: CGPoint(x: x, y: size.height - pad))
+                ctx.stroke(p, with: .color(.gray.opacity(0.15)), lineWidth: 0.5)
             }
 
-            Spacer()
-
-            Text(snapshot.deadline, style: .relative)
-                .font(.caption2.bold())
-                .foregroundStyle(urgencyColor)
-                .monospacedDigit()
-                .multilineTextAlignment(.trailing)
+            // タスクドット
+            for snapshot in snapshots.prefix(20) {
+                let days = snapshot.deadline.timeIntervalSince(now) / 86400
+                guard days > 0, days <= maxDays else { continue }
+                let x = pad + CGFloat(days / maxDays) * cw
+                let y = pad + CGFloat(1.0 - snapshot.userPriority) * ch
+                let r: CGFloat = 5
+                ctx.fill(
+                    Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)),
+                    with: .color(urgencyColor(deadline: snapshot.deadline, now: now))
+                )
+            }
         }
-        .padding(.vertical, 5)
     }
 
-    private var urgencyColor: Color {
-        let hours = snapshot.deadline.timeIntervalSinceNow / 3600
+    private func urgencyColor(deadline: Date, now: Date) -> Color {
+        let hours = deadline.timeIntervalSince(now) / 3600
         if hours < 24 { return .red }
         if hours < 72 { return .orange }
-        return .secondary
+        return .blue
     }
 }
 
