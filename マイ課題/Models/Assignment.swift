@@ -22,6 +22,10 @@ final class Assignment {
     var lastUpdatedByUser: Date?
     /// true のとき Moodle 同期ではなくユーザーが手動で作成したタスク
     var isManualEntry: Bool = false
+    /// iCal CATEGORIES フィールドの値（課程の一意ID、例：2026_99FE210）
+    var categoryID: String?
+    /// 紐付けられた Course エンティティ（同じ categoryID の Course に自動リンクされる）
+    @Relationship var course: Course?
 
     // MARK: - 計算プロパティ（DBには保存しない）
 

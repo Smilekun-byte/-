@@ -33,7 +33,8 @@ enum ICalParser {
                     uid:            uid,
                     rawTitle:       summary,
                     deadline:       deadline,
-                    rawDescription: event.description ?? ""
+                    rawDescription: event.description ?? "",
+                    categoryID:     nil  // iCalKit 経由では CATEGORIES は native path で補完
                 )
             }
     }
@@ -51,29 +52,32 @@ enum ICalParser {
 
         var items: [NetworkAssignmentItem] = []
         var uid = "", summary = "", description = ""
+        var categoryID: String?
         var deadline: Date?
         var inEvent = false
 
         for line in unfolded.components(separatedBy: .newlines) {
             if line.hasPrefix("BEGIN:VEVENT") {
                 inEvent = true
-                uid = ""; summary = ""; description = ""; deadline = nil
+                uid = ""; summary = ""; description = ""; deadline = nil; categoryID = nil
             } else if line.hasPrefix("END:VEVENT") {
                 inEvent = false
                 if !uid.isEmpty, let dl = deadline {
                     items.append(NetworkAssignmentItem(
                         uid: uid, rawTitle: summary,
-                        deadline: dl, rawDescription: description
+                        deadline: dl, rawDescription: description,
+                        categoryID: categoryID
                     ))
                 }
             } else if inEvent {
                 let name = String(line.prefix(while: { $0 != ":" && $0 != ";" }))
                 let value = valueAfterColon(line)
                 switch name {
-                case "UID":        uid = value
-                case "SUMMARY":    summary = value
+                case "UID":         uid = value
+                case "SUMMARY":     summary = value
                 case "DESCRIPTION": description = value
-                case "DTEND":      deadline = parseDate(value)
+                case "DTEND":       deadline = parseDate(value)
+                case "CATEGORIES":  categoryID = value.isEmpty ? nil : value
                 default: break
                 }
             }

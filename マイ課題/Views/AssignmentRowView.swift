@@ -5,10 +5,23 @@ struct AssignmentRowView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(assignment.cleanTitle)
-                .font(.headline)
-                .strikethrough(assignment.isCompleted)
-                .foregroundStyle(assignment.isCompleted ? .secondary : .primary)
+            HStack(spacing: 6) {
+                Text(assignment.cleanTitle)
+                    .font(.headline)
+                    .strikethrough(assignment.isCompleted)
+                    .foregroundStyle(assignment.isCompleted ? .secondary : .primary)
+
+                if let name = assignment.course?.name {
+                    Text(name)
+                        .font(.caption.bold())
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.12))
+                        .foregroundStyle(.blue)
+                        .clipShape(Capsule())
+                        .lineLimit(1)
+                }
+            }
 
             HStack(spacing: 4) {
                 Image(systemName: "clock")

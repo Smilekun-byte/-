@@ -4,8 +4,6 @@ import SwiftData
 @main
 struct マイ課題App: App {
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([Assignment.self])
-
         // App Groups が有効なら共有コンテナに、未設定なら通常パスにフォールバック
         let storeURL = FileManager.default
             .containerURL(forSecurityApplicationGroupIdentifier: SharedStore.appGroupID)?
@@ -13,13 +11,18 @@ struct マイ課題App: App {
 
         let config: ModelConfiguration
         if let url = storeURL {
-            config = ModelConfiguration(schema: schema, url: url)
+            config = ModelConfiguration(url: url)
         } else {
-            config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+            config = ModelConfiguration()
         }
 
         do {
-            return try ModelContainer(for: schema, configurations: [config])
+            // MigrationPlan を使って V1 → V2 ライトウェイトマイグレーションを自動適用
+            return try ModelContainer(
+                for: Assignment.self, Course.self,
+                migrationPlan: MaiKadaiMigrationPlan.self,
+                configurations: config
+            )
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }

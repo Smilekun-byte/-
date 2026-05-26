@@ -6,4 +6,5 @@ struct NetworkAssignmentItem {
     let rawTitle: String
     let deadline: Date
     let rawDescription: String
+    let categoryID: String?
 }

@@ -20,6 +20,15 @@ struct AssignmentDetailView: View {
                 }
             }
 
+            if let course = assignment.course {
+                Section("課程") {
+                    LabeledContent("課程名", value: course.name)
+                    LabeledContent("ID", value: course.categoryID)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section("補足メモ") {
                 TextField("メモを追加...", text: $assignment.userNotes, axis: .vertical)
                     .lineLimit(3...8)

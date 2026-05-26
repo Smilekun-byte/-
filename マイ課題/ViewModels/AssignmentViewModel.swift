@@ -7,8 +7,9 @@ class AssignmentViewModel: ObservableObject {
 
     @Published var isSyncing = false
     @Published var lastSyncError: String?
+    /// 同期後に Course が未命名の categoryID 一覧。CourseSetupView 表示トリガー。
+    @Published var unknownCategoryIDs: [String] = []
 
-    /// Keychain から URL を取得し Moodle iCal をフェッチしてローカル DB にマージする。
     func syncFromMoodle(context: ModelContext) async {
         guard let urlString = KeychainManager.loadURL(),
               let url = URL(string: urlString) else {
@@ -34,8 +35,10 @@ class AssignmentViewModel: ObservableObject {
     }
 
     /// ユーザーの変更（isCompleted・userNotes）を保護しながら Moodle データをマージする。
-    /// UID を主キーとして突合し、既存レコードは Moodle 側の変更だけを上書きする。
+    /// UID を主キーとして突合し、categoryID が一致する Course を自動リンクする。
     func mergeMoodleData(fetchedItems: [NetworkAssignmentItem], context: ModelContext) {
+        var newCategoryIDs = Set<String>()
+
         for item in fetchedItems {
             let currentUID = item.uid
             let descriptor = FetchDescriptor<Assignment>(
@@ -43,31 +46,45 @@ class AssignmentViewModel: ObservableObject {
             )
 
             if let existing = (try? context.fetch(descriptor))?.first {
-                // 既存タスク: Moodle 側が更新した可能性のある項目だけ上書きする
                 existing.deadline       = item.deadline
                 existing.rawTitle       = item.rawTitle
                 existing.rawDescription = item.rawDescription
+                existing.categoryID     = item.categoryID
+                if existing.course == nil, let cid = item.categoryID {
+                    if let course = fetchCourse(categoryID: cid, context: context) {
+                        existing.course = course
+                    } else {
+                        newCategoryIDs.insert(cid)
+                    }
+                }
             } else {
-                // 新規タスク: レコードを作成して挿入する
-                context.insert(Assignment(
+                let assignment = Assignment(
                     uid: item.uid,
                     rawTitle: item.rawTitle,
                     deadline: item.deadline,
                     rawDescription: item.rawDescription
-                ))
+                )
+                assignment.categoryID = item.categoryID
+                if let cid = item.categoryID {
+                    if let course = fetchCourse(categoryID: cid, context: context) {
+                        assignment.course = course
+                    } else {
+                        newCategoryIDs.insert(cid)
+                    }
+                }
+                context.insert(assignment)
             }
         }
 
         do {
             try context.save()
+            unknownCategoryIDs = newCategoryIDs.sorted()
             flushToWidget(context: context)
         } catch {
             lastSyncError = "保存に失敗しました: \(error.localizedDescription)"
         }
     }
 
-    /// 未完了・未来の課題をスナップショットに変換して App Groups に書き出し、
-    /// ウィジェットのタイムラインを非同期でリフレッシュする。
     func flushToWidget(context: ModelContext) {
         let now = Date()
         let descriptor = FetchDescriptor<Assignment>(
@@ -86,5 +103,13 @@ class AssignmentViewModel: ObservableObject {
         }
         SharedStore.save(Array(snapshots))
         WidgetRefreshManager.scheduleRefresh()
+    }
+
+    // MARK: - Private
+
+    private func fetchCourse(categoryID: String, context: ModelContext) -> Course? {
+        let cid = categoryID
+        let descriptor = FetchDescriptor<Course>(predicate: #Predicate { $0.categoryID == cid })
+        return (try? context.fetch(descriptor))?.first
     }
 }
