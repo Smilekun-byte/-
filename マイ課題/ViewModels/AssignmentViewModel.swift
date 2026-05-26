@@ -7,8 +7,6 @@ class AssignmentViewModel: ObservableObject {
 
     @Published var isSyncing = false
     @Published var lastSyncError: String?
-    /// 同期後に Course が未命名の categoryID 一覧。CourseSetupView 表示トリガー。
-    @Published var unknownCategoryIDs: [String] = []
 
     func syncFromMoodle(context: ModelContext) async {
         guard let urlString = KeychainManager.loadURL(),
@@ -36,9 +34,8 @@ class AssignmentViewModel: ObservableObject {
 
     /// ユーザーの変更（isCompleted・userNotes）を保護しながら Moodle データをマージする。
     /// UID を主キーとして突合し、categoryID が一致する Course を自動リンクする。
+    /// 未命名の Course は AssignmentDetailView から課題ごとに命名する。
     func mergeMoodleData(fetchedItems: [NetworkAssignmentItem], context: ModelContext) {
-        var newCategoryIDs = Set<String>()
-
         for item in fetchedItems {
             let currentUID = item.uid
             let descriptor = FetchDescriptor<Assignment>(
@@ -51,11 +48,7 @@ class AssignmentViewModel: ObservableObject {
                 existing.rawDescription = item.rawDescription
                 existing.categoryID     = item.categoryID
                 if existing.course == nil, let cid = item.categoryID {
-                    if let course = fetchCourse(categoryID: cid, context: context) {
-                        existing.course = course
-                    } else {
-                        newCategoryIDs.insert(cid)
-                    }
+                    existing.course = fetchCourse(categoryID: cid, context: context)
                 }
             } else {
                 let assignment = Assignment(
@@ -66,11 +59,7 @@ class AssignmentViewModel: ObservableObject {
                 )
                 assignment.categoryID = item.categoryID
                 if let cid = item.categoryID {
-                    if let course = fetchCourse(categoryID: cid, context: context) {
-                        assignment.course = course
-                    } else {
-                        newCategoryIDs.insert(cid)
-                    }
+                    assignment.course = fetchCourse(categoryID: cid, context: context)
                 }
                 context.insert(assignment)
             }
@@ -78,7 +67,6 @@ class AssignmentViewModel: ObservableObject {
 
         do {
             try context.save()
-            unknownCategoryIDs = newCategoryIDs.sorted()
             flushToWidget(context: context)
         } catch {
             lastSyncError = "保存に失敗しました: \(error.localizedDescription)"

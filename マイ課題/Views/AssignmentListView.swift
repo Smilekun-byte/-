@@ -35,12 +35,6 @@ struct AssignmentListView: View {
             } message: {
                 Text(viewModel.lastSyncError ?? "")
             }
-            .sheet(isPresented: Binding(
-                get: { !viewModel.unknownCategoryIDs.isEmpty },
-                set: { if !$0 { viewModel.unknownCategoryIDs = [] } }
-            )) {
-                CourseSetupView(unknownCategoryIDs: viewModel.unknownCategoryIDs)
-            }
         }
     }
 

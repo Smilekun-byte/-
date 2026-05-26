@@ -1,7 +1,10 @@
 import SwiftUI
+import SwiftData
 
 struct AssignmentDetailView: View {
     @Bindable var assignment: Assignment
+    @Environment(\.modelContext) private var modelContext
+    @State private var courseInput: String = ""
 
     var body: some View {
         Form {
@@ -20,14 +23,7 @@ struct AssignmentDetailView: View {
                 }
             }
 
-            if let course = assignment.course {
-                Section("課程") {
-                    LabeledContent("課程名", value: course.name)
-                    LabeledContent("ID", value: course.categoryID)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            courseSection
 
             Section("補足メモ") {
                 TextField("メモを追加...", text: $assignment.userNotes, axis: .vertical)
@@ -48,5 +44,51 @@ struct AssignmentDetailView: View {
         }
         .navigationTitle(assignment.cleanTitle)
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // MARK: - 課程名セクション
+
+    @ViewBuilder
+    private var courseSection: some View {
+        if let course = assignment.course {
+            // 命名済み：テキスト表示
+            Section("課程名") {
+                Text(course.name)
+            }
+        } else if assignment.categoryID != nil {
+            // Moodle 由来だが未命名：入力フィールドを表示
+            Section("課程名") {
+                TextField("課程名を入力...", text: $courseInput)
+                    .autocorrectionDisabled()
+
+                if !courseInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Button("保存して同じ課程のタスク全てに反映") {
+                        saveCourse()
+                    }
+                }
+            }
+        }
+        // categoryID がない（手動追加タスク）はセクション非表示
+    }
+
+    // MARK: - 保存
+
+    private func saveCourse() {
+        guard let cid = assignment.categoryID else { return }
+        let trimmed = courseInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let course = Course(categoryID: cid, name: trimmed)
+        modelContext.insert(course)
+
+        // 同じ categoryID を持つ全タスクに Course をリンク
+        let descriptor = FetchDescriptor<Assignment>(
+            predicate: #Predicate { $0.categoryID == cid }
+        )
+        if let all = try? modelContext.fetch(descriptor) {
+            for a in all { a.course = course }
+        }
+        try? modelContext.save()
+        courseInput = ""
     }
 }
