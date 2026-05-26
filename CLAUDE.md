@@ -78,7 +78,8 @@ iCal の各イベントには CATEGORIES フィールドがある。
 - Assignment に以下を追加（マイグレーション必須）
   - categoryID: String? // CATEGORIES の値（既存データは nil）
   - course: Course?     // @Relationship で Course と紐付け
-- 初回同期時に未命名の Course が検出されたら命名を促す UI
+- 未命名の Course が検出されたとき、課程名入力シートを表示する
+  （入力必須ではなく、スキップも可能にする。スキップ時は categoryID を仮名として表示）
 - 以降は同じ categoryID のタスクを自動で同じ Course に紐付け
 
 **マイグレーション注意**
