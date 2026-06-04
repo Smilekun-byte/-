@@ -27,6 +27,7 @@ struct マイ課題App: App {
     }()
 
     @State private var selectedTab = 0
+    @AppStorage(SettingsKeys.appTheme) private var themeRaw = AppTheme.system.rawValue
 
     var body: some Scene {
         WindowGroup {
@@ -40,18 +41,23 @@ struct マイ課題App: App {
                     .tag(1)
 
                 MatrixView()
-                    .tabItem { Label("Matrix", systemImage: "chart.scatter") }
+                    .tabItem { Label("課題マップ", systemImage: "chart.scatter") }
                     .tag(2)
 
                 SettingsView()
                     .tabItem { Label("設定", systemImage: "gearshape") }
                     .tag(3)
             }
-            // maikadai://matrix でタップ時に Matrix タブへジャンプ
+            // maikadai://<host> でタップ時に対応タブへジャンプ
             // ※ Xcode の Info.plist に URL スキーム "maikadai" の登録が必要
             .onOpenURL { url in
-                if url.host == "matrix" { selectedTab = 2 }
+                switch url.host {
+                case "list":   selectedTab = 0
+                case "matrix": selectedTab = 2
+                default:       break
+                }
             }
+            .preferredColorScheme(AppTheme(rawValue: themeRaw)?.colorScheme)
         }
         .modelContainer(sharedModelContainer)
     }

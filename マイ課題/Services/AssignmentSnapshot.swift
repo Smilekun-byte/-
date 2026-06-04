@@ -8,24 +8,28 @@ struct AssignmentSnapshot: Codable, Identifiable {
     let deadline: Date
     let isMidnightDeadline: Bool
     let userPriority: Double    // Matrix Widget の縦軸表示用
+    let colorHex: String?       // Course.colorHex（未設定タスクは nil）
 
     init(id: String, cleanTitle: String, deadline: Date,
-         isMidnightDeadline: Bool, userPriority: Double = 0.5) {
+         isMidnightDeadline: Bool, userPriority: Double = 0.5,
+         colorHex: String? = nil) {
         self.id = id
         self.cleanTitle = cleanTitle
         self.deadline = deadline
         self.isMidnightDeadline = isMidnightDeadline
         self.userPriority = userPriority
+        self.colorHex = colorHex
     }
 
-    // userPriority が存在しない旧データを安全にデコードするためカスタム実装
+    // userPriority / colorHex が存在しない旧データを安全にデコードするためカスタム実装
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        id                = try c.decode(String.self, forKey: .id)
-        cleanTitle        = try c.decode(String.self, forKey: .cleanTitle)
-        deadline          = try c.decode(Date.self,   forKey: .deadline)
-        isMidnightDeadline = try c.decode(Bool.self,  forKey: .isMidnightDeadline)
-        userPriority      = try c.decodeIfPresent(Double.self, forKey: .userPriority) ?? 0.5
+        id                 = try c.decode(String.self, forKey: .id)
+        cleanTitle         = try c.decode(String.self, forKey: .cleanTitle)
+        deadline           = try c.decode(Date.self,   forKey: .deadline)
+        isMidnightDeadline = try c.decode(Bool.self,   forKey: .isMidnightDeadline)
+        userPriority       = try c.decodeIfPresent(Double.self,  forKey: .userPriority) ?? 0.5
+        colorHex           = try c.decodeIfPresent(String.self,  forKey: .colorHex)
     }
 }
 
@@ -34,7 +38,7 @@ enum SharedStore {
     static let appGroupID = "group.com.smilekun.maikadai"
     private static let key = "upcoming_snapshots"
 
-    /// メインアプリが同期後に呼び出す。未完了・未来の課題のみ最大10件を保存する。
+    /// メインアプリが同期後に呼び出す。未完了・未来の課題のみ最大30件を保存する。
     static func save(_ snapshots: [AssignmentSnapshot]) {
         guard
             let defaults = UserDefaults(suiteName: appGroupID),

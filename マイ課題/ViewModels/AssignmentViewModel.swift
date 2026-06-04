@@ -36,6 +36,9 @@ class AssignmentViewModel: ObservableObject {
     /// UID を主キーとして突合し、categoryID が一致する Course を自動リンクする。
     /// 未命名の Course は AssignmentDetailView から課題ごとに命名する。
     func mergeMoodleData(fetchedItems: [NetworkAssignmentItem], context: ModelContext) {
+        var addedCount = 0
+        var touched: [Assignment] = []
+
         for item in fetchedItems {
             let currentUID = item.uid
             let descriptor = FetchDescriptor<Assignment>(
@@ -50,6 +53,7 @@ class AssignmentViewModel: ObservableObject {
                 if existing.course == nil, let cid = item.categoryID {
                     existing.course = fetchCourse(categoryID: cid, context: context)
                 }
+                touched.append(existing)
             } else {
                 let assignment = Assignment(
                     uid: item.uid,
@@ -62,12 +66,17 @@ class AssignmentViewModel: ObservableObject {
                     assignment.course = fetchCourse(categoryID: cid, context: context)
                 }
                 context.insert(assignment)
+                touched.append(assignment)
+                addedCount += 1
             }
         }
 
         do {
             try context.save()
             flushToWidget(context: context)
+            // 同期で更新された全課題の通知を組み直す（deadline 変更にも追従）
+            for a in touched { NotificationManager.scheduleNotifications(for: a) }
+            NotificationManager.notifySyncComplete(addedCount: addedCount)
         } catch {
             lastSyncError = "保存に失敗しました: \(error.localizedDescription)"
         }
@@ -87,7 +96,8 @@ class AssignmentViewModel: ObservableObject {
                 cleanTitle: a.cleanTitle,
                 deadline: a.deadline,
                 isMidnightDeadline: a.isMidnightDeadline,
-                userPriority: a.userPriority
+                userPriority: a.userPriority,
+                colorHex: a.course?.colorHex
             )
         }
         SharedStore.save(Array(snapshots))

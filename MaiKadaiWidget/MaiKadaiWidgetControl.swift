@@ -1,10 +1,3 @@
-//
-//  MaiKadaiWidgetControl.swift
-//  MaiKadaiWidget
-//
-//  Created by 漆咚 on 2026/05/24.
-//
-
 import AppIntents
 import SwiftUI
 import WidgetKit
@@ -12,43 +5,30 @@ import WidgetKit
 struct MaiKadaiWidgetControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(
-            kind: "com.smilekun.----.MaiKadaiWidget",
+            kind: "com.smilekun.maikadai.control",
             provider: Provider()
-        ) { value in
-            ControlWidgetToggle(
-                "Start Timer",
-                isOn: value,
-                action: StartTimerIntent()
-            ) { isRunning in
-                Label(isRunning ? "On" : "Off", systemImage: "timer")
+        ) { _ in
+            ControlWidgetButton(action: OpenMaiKadaiIntent()) {
+                Label("マイ課題", systemImage: "graduationcap.fill")
             }
         }
-        .displayName("Timer")
-        .description("A an example control that runs a timer.")
+        .displayName("マイ課題")
+        .description("タップしてアプリを開き、課題を確認します。")
     }
 }
 
 extension MaiKadaiWidgetControl {
     struct Provider: ControlValueProvider {
-        var previewValue: Bool {
-            false
-        }
-
-        func currentValue() async throws -> Bool {
-            let isRunning = true // Check if the timer is running
-            return isRunning
-        }
+        var previewValue: Bool { false }
+        func currentValue() async throws -> Bool { false }
     }
 }
 
-struct StartTimerIntent: SetValueIntent {
-    static let title: LocalizedStringResource = "Start a timer"
-
-    @Parameter(title: "Timer is running")
-    var value: Bool
+struct OpenMaiKadaiIntent: AppIntent {
+    static let title: LocalizedStringResource = "マイ課題を開く"
+    static let openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
-        // Start / stop the timer based on `value`.
-        return .result()
+        .result()
     }
 }

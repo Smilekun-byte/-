@@ -89,21 +89,53 @@ VersionedSchema + SchemaMigrationPlan を必ず同時に実装すること。
 
 ---
 
-### v7: Matrix View
+### v7: 課題マップ（App 内 + Widget）
 
-**App 内（新 Tab）**
-- 横軸 = deadline までの距離（自動計算・変更不可）
-- 縦軸 = userPriority（0.0〜1.0）
-- ドラッグで userPriority を調整できる
-- これが実際の操作画面
+**App 内（新タブ「課題マップ」）**
+- 横軸 = deadline までの距離（今日・1週・2週・3週・4週）
+- 縦軸 = userPriority（上端に「重要度」表示、上向き矢印のみ）
+- 各タスクをドラッグして縦軸上の位置を変えることで重要度を調整
+- ドットの色は Course の colorHex から生成
 
-**主画面 Widget（WidgetKit）**
-- Matrix の現在状態を読み取り専用で表示
-- ドラッグ不可（WidgetKit の仕様上の制限）
-- タップすると App 内の Matrix View に遷移
+**Widget（Medium サイズ）**
+- `MaiKadaiMatrixWidget`（Medium 専用・独立 Widget struct）
+- 課題マップの現在状態を読み取り専用で表示
+- 縦軸は上向き矢印のみ（ラベルなし）
+- 横軸ラベル（今日・1週・2週・3週・4週）を下端に表示
+- タップで App 内の課題マップタブへ遷移（`maikadai://matrix`）
 
-**データ追加（マイグレーション必須）**
-- Assignment に userPriority: Double を追加（デフォルト 0.5）
+**Course カラー設定**
+- Course エンティティに colorHex: String を追加
+- 課題詳細画面（AssignmentDetailView）の課程名横の ColorPicker から変更
+- 設定タブの「課程の管理」で左スワイプ → 「編集」「削除」
+- Course 未設定タスクはデフォルト色（.blue）
+
+**将来の拡張用フィールド（UI なし）**
+- Assignment に manualColor: String? を追加済み
+  （手動追加タスクへの個別カラー設定用、将来実装）
+
+---
+
+## Widget 構成（現在）
+
+| Widget 名 | struct 名 | サイズ | 内容 |
+|---|---|---|---|
+| マイ課題 | `SmallDeadlineWidget` | Small | 次の締め切り1件・残り時間を表示 |
+| 課題マップ | `MaiKadaiMatrixWidget` | Medium | 課題密集度マップ（読み取り専用） |
+| — | `MaiKadaiWidgetControl` | Control Center | タップでアプリを起動（`OpenMaiKadaiIntent`） |
+
+**共有データフロー**
+```
+App → AssignmentViewModel.flushToWidget()
+    → SharedStore.save([AssignmentSnapshot])   // App Groups UserDefaults
+    → WidgetRefreshManager.scheduleRefresh()   // WidgetCenter.reloadAllTimelines()
+Widget → SharedStore.load() → DeadlineEntry → MaiKadaiWidgetView
+```
+
+**AssignmentSnapshot フィールド**（ウィジェット側に渡すデータ）
+```
+id, cleanTitle, deadline, isMidnightDeadline, userPriority, colorHex?
+```
 
 ---
 

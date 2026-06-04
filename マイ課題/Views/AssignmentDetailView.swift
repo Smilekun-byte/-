@@ -5,6 +5,7 @@ struct AssignmentDetailView: View {
     @Bindable var assignment: Assignment
     @Environment(\.modelContext) private var modelContext
     @State private var courseInput: String = ""
+    @StateObject private var viewModel = AssignmentViewModel()
 
     var body: some View {
         Form {
@@ -25,6 +26,8 @@ struct AssignmentDetailView: View {
 
             courseSection
 
+            estimatedTimeSection
+
             Section("補足メモ") {
                 TextField("メモを追加...", text: $assignment.userNotes, axis: .vertical)
                     .lineLimit(3...8)
@@ -44,6 +47,41 @@ struct AssignmentDetailView: View {
         }
         .navigationTitle(assignment.cleanTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: assignment.isCompleted) { _, completed in
+            if completed {
+                NotificationManager.cancelNotifications(for: assignment)
+            } else {
+                NotificationManager.scheduleNotifications(for: assignment)
+            }
+            viewModel.flushToWidget(context: modelContext)
+        }
+    }
+
+    // MARK: - 予想所要時間セクション
+
+    @ViewBuilder
+    private var estimatedTimeSection: some View {
+        Section("予想所要時間") {
+            if assignment.estimatedMinutes != nil {
+                Stepper(
+                    assignment.estimatedTimeLabel ?? "",
+                    value: Binding(
+                        get: { assignment.estimatedMinutes ?? 60 },
+                        set: { assignment.estimatedMinutes = $0 }
+                    ),
+                    in: 30...480,
+                    step: 30
+                )
+                Button("設定を削除", role: .destructive) {
+                    assignment.estimatedMinutes = nil
+                }
+                .font(.subheadline)
+            } else {
+                Button("所要時間を設定する") {
+                    assignment.estimatedMinutes = 60
+                }
+            }
+        }
     }
 
     // MARK: - 課程名セクション
@@ -51,9 +89,27 @@ struct AssignmentDetailView: View {
     @ViewBuilder
     private var courseSection: some View {
         if let course = assignment.course {
-            // 命名済み：テキスト表示
+            // 命名済み：名前を編集可能な TextField + カラーピッカー
+            // course.name はユーザー編集データ。mergeMoodleData では上書きされない。
             Section("課程名") {
-                Text(course.name)
+                HStack {
+                    TextField("課程名", text: Binding(
+                        get: { course.name },
+                        set: { course.name = $0 }
+                    ))
+                    .autocorrectionDisabled()
+                    Spacer(minLength: 8)
+                    ColorPicker(
+                        "",
+                        selection: Binding(
+                            get: { Color(hex: course.colorHex) },
+                            set: { course.colorHex = $0.toHex() ?? course.colorHex }
+                        ),
+                        supportsOpacity: false
+                    )
+                    .labelsHidden()
+                    .frame(width: 28)
+                }
             }
         } else if assignment.categoryID != nil {
             // Moodle 由来だが未命名：入力フィールドを表示
@@ -90,5 +146,6 @@ struct AssignmentDetailView: View {
         }
         try? modelContext.save()
         courseInput = ""
+        viewModel.flushToWidget(context: modelContext)
     }
 }

@@ -63,7 +63,7 @@ private struct MediumMatrixWidgetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Label("Matrix", systemImage: "chart.scatter")
+            Label("課題マップ", systemImage: "chart.scatter")
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
 
@@ -74,6 +74,68 @@ private struct MediumMatrixWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         // タップで App 内の Matrix タブへ遷移（要 URL スキーム登録: maikadai://）
         .widgetURL(URL(string: "maikadai://matrix"))
+    }
+}
+
+// MARK: - Medium（直近の課題リスト・最大3件）
+
+struct MediumListWidgetView: View {
+    let entry: DeadlineEntry
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("直近の課題", systemImage: "list.bullet")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+
+            if entry.snapshots.isEmpty {
+                Spacer()
+                Text("課題なし ☕️")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                Spacer()
+            } else {
+                ForEach(entry.snapshots.prefix(3)) { snapshot in
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(dotColor(snapshot))
+                            .frame(width: 8, height: 8)
+
+                        Text(snapshot.cleanTitle)
+                            .font(.subheadline)
+                            .lineLimit(1)
+
+                        if snapshot.isMidnightDeadline {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                        }
+
+                        Spacer(minLength: 4)
+
+                        Text(snapshot.deadline, style: .relative)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // タップで App 内の課題一覧タブへ遷移
+        .widgetURL(URL(string: "maikadai://list"))
+    }
+
+    private func dotColor(_ snapshot: AssignmentSnapshot) -> Color {
+        let hours = snapshot.deadline.timeIntervalSinceNow / 3600
+        if hours < 24 { return .red }
+        if hours < 72 { return .orange }
+        if let hex = snapshot.colorHex { return Color(hex: hex) }
+        return .blue
     }
 }
 
@@ -149,7 +211,7 @@ private struct MatrixCanvasView: View {
                         ctx.fill(
                             Path(ellipseIn: CGRect(x: x - r, y: y - r,
                                                    width: r * 2, height: r * 2)),
-                            with: .color(urgencyColor(deadline: snapshot.deadline, now: now))
+                            with: .color(dotColor(snapshot: snapshot, now: now))
                         )
                     }
                 }
@@ -172,10 +234,11 @@ private struct MatrixCanvasView: View {
         }
     }
 
-    private func urgencyColor(deadline: Date, now: Date) -> Color {
-        let hours = deadline.timeIntervalSince(now) / 3600
+    private func dotColor(snapshot: AssignmentSnapshot, now: Date) -> Color {
+        let hours = snapshot.deadline.timeIntervalSince(now) / 3600
         if hours < 24 { return .red }
         if hours < 72 { return .orange }
+        if let hex = snapshot.colorHex { return Color(hex: hex) }
         return .blue
     }
 }
@@ -183,13 +246,19 @@ private struct MatrixCanvasView: View {
 // MARK: - Preview
 
 #Preview(as: .systemSmall) {
-    MaiKadaiWidget()
+    SmallDeadlineWidget()
 } timeline: {
     DeadlineEntry.preview
 }
 
 #Preview(as: .systemMedium) {
-    MaiKadaiWidget()
+    MaiKadaiMatrixWidget()
+} timeline: {
+    DeadlineEntry.preview
+}
+
+#Preview(as: .systemMedium) {
+    MaiKadaiListWidget()
 } timeline: {
     DeadlineEntry.preview
 }

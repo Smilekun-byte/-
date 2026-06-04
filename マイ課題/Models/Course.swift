@@ -10,7 +10,7 @@ final class Course {
     @Relationship(deleteRule: .nullify, inverse: \Assignment.course)
     var assignments: [Assignment] = []
 
-    init(categoryID: String, name: String, colorHex: String = "#5856D6") {
+    init(categoryID: String, name: String, colorHex: String = "#4A90D9") {
         self.categoryID = categoryID
         self.name = name
         self.colorHex = colorHex

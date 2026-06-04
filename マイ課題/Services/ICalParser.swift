@@ -21,6 +21,8 @@ enum ICalParser {
     private static func parseWithLibrary(_ icalString: String) -> [NetworkAssignmentItem] {
         guard let data = icalString.data(using: .utf8) else { return [] }
         let calendars = iCalKit.parse(icsData: data)
+        // iCalKit は CATEGORIES フィールドを公開しないためネイティブ解析で補完する
+        let categoryByUID = extractCategories(from: icalString)
         return calendars
             .flatMap { $0.events }
             .compactMap { event in
@@ -34,9 +36,35 @@ enum ICalParser {
                     rawTitle:       summary,
                     deadline:       deadline,
                     rawDescription: event.description ?? "",
-                    categoryID:     nil  // iCalKit 経由では CATEGORIES は native path で補完
+                    categoryID:     categoryByUID[uid]
                 )
             }
+    }
+
+    private static func extractCategories(from icalString: String) -> [String: String] {
+        let unfolded = icalString
+            .replacingOccurrences(of: "\r\n ", with: "")
+            .replacingOccurrences(of: "\r\n\t", with: "")
+            .replacingOccurrences(of: "\n ",  with: "")
+            .replacingOccurrences(of: "\n\t", with: "")
+        var result: [String: String] = [:]
+        var currentUID = ""
+        var inEvent = false
+        for line in unfolded.components(separatedBy: .newlines) {
+            if line.hasPrefix("BEGIN:VEVENT") {
+                inEvent = true; currentUID = ""
+            } else if line.hasPrefix("END:VEVENT") {
+                inEvent = false
+            } else if inEvent {
+                let name = String(line.prefix(while: { $0 != ":" && $0 != ";" }))
+                let value = valueAfterColon(line)
+                if name == "UID" { currentUID = value }
+                else if name == "CATEGORIES", !currentUID.isEmpty, !value.isEmpty {
+                    result[currentUID] = value
+                }
+            }
+        }
+        return result
     }
     #endif
 

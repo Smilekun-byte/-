@@ -55,8 +55,8 @@ struct MaiKadaiWidgetProvider: TimelineProvider {
 
 // MARK: - Widget（@main は MaiKadaiWidgetBundle に委譲）
 
-struct MaiKadaiWidget: Widget {
-    let kind = "MaiKadaiWidget"
+struct SmallDeadlineWidget: Widget {
+    let kind = "SmallDeadlineWidget"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: MaiKadaiWidgetProvider()) { entry in
@@ -65,6 +65,34 @@ struct MaiKadaiWidget: Widget {
         }
         .configurationDisplayName("マイ課題")
         .description("次の締め切りをホーム画面で確認できます。")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+struct MaiKadaiMatrixWidget: Widget {
+    let kind = "MaiKadaiMatrixWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: MaiKadaiWidgetProvider()) { entry in
+            MaiKadaiWidgetView(entry: entry)
+                .containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("課題マップ")
+        .description("課題の締め切りと重要度をマップで確認できます。")
+        .supportedFamilies([.systemMedium])
+    }
+}
+
+struct MaiKadaiListWidget: Widget {
+    let kind = "MaiKadaiListWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: MaiKadaiWidgetProvider()) { entry in
+            MediumListWidgetView(entry: entry)
+                .containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("直近の課題")
+        .description("締め切りが近い3件の課題を一覧で表示します。")
+        .supportedFamilies([.systemMedium])
     }
 }

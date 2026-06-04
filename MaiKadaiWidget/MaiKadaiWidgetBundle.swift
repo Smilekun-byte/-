@@ -11,6 +11,9 @@ import SwiftUI
 @main
 struct MaiKadaiWidgetBundle: WidgetBundle {
     var body: some Widget {
-        MaiKadaiWidget()
+        SmallDeadlineWidget()
+        MaiKadaiMatrixWidget()
+        MaiKadaiListWidget()
+        MaiKadaiWidgetControl()
     }
 }

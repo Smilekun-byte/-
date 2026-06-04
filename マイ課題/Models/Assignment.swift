@@ -28,6 +28,10 @@ final class Assignment {
     @Relationship var course: Course?
     /// 主観的重要度（0.0=低、0.5=中、1.0=高）。Matrix View の縦軸に対応。
     var userPriority: Double = 0.5
+    /// 将来の手動色付け機能用（Phase 3 予定。今は UI なし）
+    var manualColor: String?
+    /// 予想所要時間（分）。未設定は nil。
+    var estimatedMinutes: Int?
 
     // MARK: - 計算プロパティ（DBには保存しない）
 
@@ -38,6 +42,15 @@ final class Assignment {
             .replacingOccurrences(of: "「提出:", with: "")
             .replacingOccurrences(of: "」の提出期限", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// 予想所要時間の表示文字列（例：「約1時間30分」）。未設定は nil。
+    var estimatedTimeLabel: String? {
+        guard let m = estimatedMinutes else { return nil }
+        if m < 60 { return "約\(m)分" }
+        let h = m / 60
+        let rem = m % 60
+        return rem == 0 ? "約\(h)時間" : "約\(h)時間\(rem)分"
     }
 
     /// 締め切りが0:00（前日深夜と混同しやすい罠）かどうかを検知するフラグ

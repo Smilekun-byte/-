@@ -28,6 +28,12 @@ struct AssignmentRowView: View {
                     .imageScale(.small)
                 Text(assignment.deadline, style: .date)
                 Text(assignment.deadline, style: .time)
+                if let label = assignment.estimatedTimeLabel {
+                    Spacer()
+                    Label(label, systemImage: "timer")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
