@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マイ課題 — Moodleの締切を、もう見逃さない。</title>
+<link rel="icon" type="image/png" href="screenshots/app-icon.png">
+<link rel="apple-touch-icon" href="screenshots/app-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f4f4f4;
+  --ink: #171a20;
+  --ink-soft: #5c5e62;
+  --ink-faint: #8a8c91;
+  --line: #d0d1d2;
+  --accent: #3e6ae1;
+  --warn: #e25a23;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Noto Sans JP', "Helvetica Neue", -apple-system, sans-serif;
+  background: var(--bg); color: var(--ink);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "palt";
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 16px 28px;
+  display: flex; justify-content: space-between; align-items: center;
+  background: transparent;
+  transition: background 0.3s;
+}
+nav.scrolled {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+.logo {
+  font-weight: 700; font-size: 18px; letter-spacing: -0.02em;
+  display: flex; align-items: center; gap: 10px;
+}
+.nav-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.nav-right {
+  background: rgba(244,244,244,0.6);
+  padding: 8px 16px; border-radius: 980px;
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: background 0.2s;
+}
+.nav-right:hover { background: rgba(0,0,0,0.08); }
+
+.hero {
+  min-height: 100vh;
+  padding: 100px 24px 60px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  text-align: center;
+  background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+}
+.hero-content { margin-top: 80px; max-width: 900px; }
+.hero-icon {
+  width: 96px; height: 96px;
+  border-radius: 22px;
+  margin-bottom: 32px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  animation: fadeUp 0.8s 0.1s both;
+}
+h1.hero-title {
+  font-size: clamp(48px, 9vw, 96px);
+  font-weight: 700; letter-spacing: -0.04em;
+  line-height: 1.05; margin-bottom: 24px;
+  animation: fadeUp 0.8s 0.2s both;
+}
+.hero-sub {
+  font-size: clamp(16px, 2vw, 20px);
+  color: var(--ink-soft);
+  margin-bottom: 40px; font-weight: 400;
+  letter-spacing: -0.005em;
+  animation: fadeUp 0.8s 0.3s both;
+}
+.hero-cta {
+  display: flex; gap: 12px;
+  justify-content: center; flex-wrap: wrap;
+  animation: fadeUp 0.8s 0.4s both;
+}
+
+.btn {
+  padding: 12px 64px; border-radius: 980px;
+  font-size: 14px; font-weight: 500; letter-spacing: 0.02em;
+  text-align: center; cursor: pointer; min-width: 244px;
+  transition: background 0.2s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-primary { background: var(--ink); color: white; }
+.btn-primary:hover { background: #2a2d34; }
+.btn-secondary {
+  background: rgba(244,244,244,0.65); color: var(--ink);
+  backdrop-filter: blur(20px);
+}
+.btn-secondary:hover { background: rgba(0,0,0,0.08); }
+
+.hero-phone { margin-top: 40px; animation: fadeUp 1s 0.6s both; }
+
+.phone-frame {
+  width: 280px; display: inline-block; position: relative;
+  border-radius: 48px; padding: 8px;
+  background: #1d1d1f;
+  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.06), 0 30px 60px -20px rgba(0,0,0,0.25);
+}
+.phone-frame img {
+  width: 100%; height: auto; display: block;
+  border-radius: 42px;
+}
+.phone-frame::before {
+  content: ''; position: absolute;
+  top: 20px; left: 50%; transform: translateX(-50%);
+  width: 100px; height: 28px;
+  background: #000; border-radius: 20px; z-index: 2;
+}
+
+section { padding: 100px 24px; position: relative; }
+.section-inner { max-width: 1280px; margin: 0 auto; }
+
+.section-title {
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 700; letter-spacing: -0.035em;
+  line-height: 1.05; text-align: center;
+}
+.section-sub {
+  font-size: 17px; color: var(--ink-soft);
+  text-align: center; margin-top: 16px;
+  letter-spacing: -0.005em;
+  max-width: 600px; margin-left: auto; margin-right: auto;
+  line-height: 1.5;
+}
+
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 100px; align-items: center;
+  margin-top: 80px;
+}
+.two-col-reverse .text-col { order: 2; }
+.text-col h3 {
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 24px;
+}
+.text-col p {
+  font-size: 17px; color: var(--ink-soft);
+  line-height: 1.6; letter-spacing: -0.005em;
+  max-width: 480px;
+}
+.text-col p + p { margin-top: 16px; }
+.phone-col { display: flex; justify-content: center; }
+
+.problem {
+  background: var(--ink); color: white;
+  padding: 140px 24px; text-align: center;
+}
+.problem-title {
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 800; letter-spacing: -0.04em;
+  line-height: 1; margin-bottom: 48px;
+}
+.problem-title .strike {
+  color: #6e6e73; text-decoration: line-through;
+  text-decoration-thickness: 3px;
+  display: block; margin-bottom: 12px;
+}
+.problem-title .answer { color: var(--warn); }
+.problem-desc {
+  font-size: 20px; color: rgba(255,255,255,0.7);
+  line-height: 1.6; max-width: 640px; margin: 0 auto;
+  letter-spacing: -0.005em;
+}
+.problem-desc strong { color: white; font-weight: 500; }
+
+.widgets { background: var(--bg-soft); padding: 140px 24px; }
+.widget-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 32px; margin-top: 80px;
+}
+.widget-item {
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+}
+.widget-item img {
+  width: 100%; max-width: 320px; height: auto;
+  border-radius: 24px; margin-bottom: 32px;
+}
+.widget-item h4 {
+  font-size: 24px; font-weight: 700;
+  margin-bottom: 12px; letter-spacing: -0.02em;
+}
+.widget-item p {
+  font-size: 15px; color: var(--ink-soft);
+  line-height: 1.5; max-width: 280px;
+}
+
+.privacy {
+  background: var(--ink); color: white;
+  padding: 140px 24px;
+}
+.privacy .section-title { color: white; }
+.privacy .section-sub { color: rgba(255,255,255,0.6); }
+.privacy-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 48px; margin-top: 80px;
+  max-width: 1000px; margin-left: auto; margin-right: auto;
+}
+.privacy-item { text-align: center; }
+.privacy-item-num {
+  font-size: 64px; font-weight: 200;
+  color: var(--warn); margin-bottom: 16px;
+  letter-spacing: -0.04em; line-height: 1;
+}
+.privacy-item h4 {
+  font-size: 22px; font-weight: 600;
+  margin-bottom: 12px; letter-spacing: -0.02em;
+}
+.privacy-item p {
+  font-size: 15px; color: rgba(255,255,255,0.6);
+  line-height: 1.6;
+}
+.privacy-note {
+  margin-top: 80px; padding-top: 48px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  text-align: center;
+  font-size: 15px; color: rgba(255,255,255,0.6);
+  line-height: 1.7;
+  max-width: 720px; margin-left: auto; margin-right: auto;
+}
+.privacy-note strong { color: white; font-weight: 500; }
+
+.cta { padding: 140px 24px; text-align: center; }
+.cta-title {
+  font-size: clamp(48px, 8vw, 88px);
+  font-weight: 700; letter-spacing: -0.04em;
+  line-height: 1.05; margin-bottom: 24px;
+}
+.cta-sub {
+  font-size: 18px; color: var(--ink-soft);
+  margin-bottom: 48px;
+}
+.cta-buttons {
+  display: flex; gap: 12px;
+  justify-content: center; flex-wrap: wrap;
+}
+
+footer { background: var(--bg); padding: 24px; }
+.footer-inner {
+  max-width: 1280px; margin: 0 auto;
+  display: flex; justify-content: center; gap: 32px;
+  flex-wrap: wrap;
+  font-size: 12px; color: var(--ink-soft);
+}
+.footer-inner a:hover { color: var(--ink); }
+
+.disclaimer {
+  margin-top: 64px; padding: 32px 24px;
+  background: var(--bg-soft);
+  font-size: 11px; color: var(--ink-faint);
+  line-height: 1.7; text-align: center;
+}
+.disclaimer-inner { max-width: 800px; margin: 0 auto; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.8s, transform 0.8s; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; gap: 60px; text-align: center; }
+  .text-col p { margin-left: auto; margin-right: auto; }
+  .two-col-reverse .text-col { order: 1; }
+  .widget-grid { grid-template-columns: 1fr; gap: 60px; }
+  .privacy-grid { grid-template-columns: 1fr; gap: 48px; }
+  .btn { min-width: 260px; }
+}
+@media (max-width: 600px) {
+  section { padding: 80px 20px; }
+  .problem, .widgets, .privacy, .cta { padding: 100px 20px; }
+  .hero { padding: 80px 20px 40px; }
+}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="logo">
+    <img src="screenshots/app-icon.png" alt="マイ課題アイコン" class="nav-icon">
+    <span>マイ課題</span>
+  </div>
+  <div class="nav-right">メニュー</div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <img src="screenshots/app-icon.png" alt="マイ課題" class="hero-icon">
+    <h1 class="hero-title">マイ課題</h1>
+    <p class="hero-sub">Moodleの締切を、もう見逃さない。</p>
+    <div class="hero-cta">
+      <a href="#" class="btn btn-primary">App Store</a>
+      <a href="#" class="btn btn-secondary">詳しく</a>
+    </div>
+  </div>
+  <div class="hero-phone">
+    <div class="phone-frame">
+      <img src="screenshots/main.png" alt="マイ課題のメイン画面">
+    </div>
+  </div>
+</section>
+
+<section class="problem">
+  <div class="section-inner">
+    <h2 class="problem-title">
+      <span class="strike">5月30日 0:00</span>
+      <span class="answer">29日の深夜。</span>
+    </h2>
+    <p class="problem-desc">
+      Moodleの締切は、しばしば日付の境目に設定される。<br>
+      <strong>「5月30日 0:00」</strong>は、思っている「30日の夜中」ではなく、29日が終わる瞬間。<br><br>
+      たった1日の認知のズレが、徹夜のレポートを台無しにする。
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="section-inner">
+    <h2 class="section-title">課題を、俯瞰する。</h2>
+    <p class="section-sub">月単位で、すべての締切を一目で確認。</p>
+    <div class="two-col reveal">
+      <div class="text-col">
+        <h3>カレンダー。<br>全体像を、瞬時に。</h3>
+        <p>今月、どの日に何個の課題があるか。直感的なドット表示で、忙しい週がひと目で分かる。</p>
+        <p>タップした日の課題が、その場でリストアップされる。</p>
+      </div>
+      <div class="phone-col">
+        <div class="phone-frame">
+          <img src="screenshots/calendar.png" alt="カレンダー画面">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background: var(--bg-soft);">
+  <div class="section-inner">
+    <div class="two-col two-col-reverse reveal">
+      <div class="text-col">
+        <h3>メモも、完了も、<br>消えない。</h3>
+        <p>Moodleと同期しても、自分で書いたメモも、完了マークも、絶対に消えない。</p>
+        <p>「提出物はPDFのみ」「学籍番号を記入」<br>そんな自分用の補足を、いつでも追記できる。</p>
+      </div>
+      <div class="phone-col">
+        <div class="phone-frame">
+          <img src="screenshots/detail.png" alt="課題詳細画面">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-inner">
+    <div class="two-col reveal">
+      <div class="text-col">
+        <h3>あなたの色で、<br>整える。</h3>
+        <p>科目ごとに、自由に色を選べる。<br>カレンダーも、課題マップも、ウィジェットも、同じ色で統一される。</p>
+        <p>「線形代数は青」「物理は緑」<br>視覚的に、瞬時に判別できる。</p>
+      </div>
+      <div class="phone-col">
+        <div class="phone-frame">
+          <img src="screenshots/courses.png" alt="課程管理画面">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="widgets">
+  <div class="section-inner">
+    <h2 class="section-title">ホーム画面で、<br>すべてを把握。</h2>
+    <p class="section-sub">アプリを開かなくても、次の締切は常に手のひらに。</p>
+    <div class="widget-grid reveal">
+      <div class="widget-item">
+        <img src="screenshots/widget-small.png" alt="マイ課題 Small Widget">
+        <h4>マイ課題</h4>
+        <p>次の締切までの残り時間を、リアルタイムでカウントダウン。</p>
+      </div>
+      <div class="widget-item">
+        <img src="screenshots/widget-map.png" alt="課題マップ Medium Widget">
+        <h4>課題マップ</h4>
+        <p>締切と重要度を、散布図で。今やるべきことが、一目で分かる。</p>
+      </div>
+      <div class="widget-item">
+        <img src="screenshots/widget-list.png" alt="直近の課題 Medium Widget">
+        <h4>直近の課題</h4>
+        <p>締切が近い3件を、ホーム画面に。優先順位を、瞬時に把握。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="privacy">
+  <div class="section-inner">
+    <h2 class="section-title">あなたのデータは、<br>あなたのもの。</h2>
+    <p class="section-sub">アカウント不要。サーバー経由なし。完全オープンソース。</p>
+    <div class="privacy-grid reveal">
+      <div class="privacy-item">
+        <div class="privacy-item-num">01</div>
+        <h4>アカウント不要</h4>
+        <p>メールアドレスもパスワードも、一切受け取らない。</p>
+      </div>
+      <div class="privacy-item">
+        <div class="privacy-item-num">02</div>
+        <h4>サーバー経由なし</h4>
+        <p>同期は、あなたの端末と大学のMoodleの間で直接。</p>
+      </div>
+      <div class="privacy-item">
+        <div class="privacy-item-num">03</div>
+        <h4>Keychain保護</h4>
+        <p>iCal URLは、iPhoneのKeychainで暗号化される。</p>
+      </div>
+    </div>
+    <p class="privacy-note">
+      これは<strong>Moodle公式の補助</strong>です。代替ではありません。<br>
+      重要な締切は、必ずMoodle公式で最終確認してください。
+    </p>
+  </div>
+</section>
+
+<section class="cta">
+  <h2 class="cta-title">締切を、味方に。</h2>
+  <p class="cta-sub">完全無料 ・ 広告なし ・ オープンソース</p>
+  <div class="cta-buttons">
+    <a href="#" class="btn btn-primary">App Store</a>
+    <a href="#" class="btn btn-secondary">GitHub</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <a href="#">マイ課題 © 2026</a>
+    <a href="#">プライバシー</a>
+    <a href="#">利用規約</a>
+    <a href="#">GitHub</a>
+    <a href="#">お問い合わせ</a>
+  </div>
+</footer>
+
+<div class="disclaimer">
+  <div class="disclaimer-inner">
+    本アプリはMoodle公式とは無関係の非公式ツールです。アカウント情報や個人情報は一切取得せず、iCalカレンダーURLのみを端末内Keychainに保存します。開発者サーバーへのデータ送信は行われません。iCal URLの取得・利用は各大学の利用規約に従ってください。締切情報は必ずMoodle公式で最終確認してください。本アプリの利用により生じた学業上の損失について、開発者は一切の責任を負いません。
+  </div>
+</div>
+
+<script>
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 30) nav.classList.add('scrolled');
+  else nav.classList.remove('scrolled');
+});
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
