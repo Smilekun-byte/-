@@ -2,7 +2,7 @@
 
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange?logo=swift)
 ![Platform](https://img.shields.io/badge/Platform-iOS%2017%2B-blue?logo=apple)
-![License](https://img.shields.io/badge/License-MIT-green)
+![License](https://img.shields.io/badge/License-AGPL--3.0-blue)
 ![OSS](https://img.shields.io/badge/OSS-無料・完全公開-brightgreen)
 
 > **大学のMoodleは、締め切りを「5月30日 0:00」と表示する。**  
@@ -167,7 +167,11 @@ IssueやPRを歓迎します。
 
 ## 📄 ライセンス
 
-[MIT License](LICENSE) © 2026
+[AGPL-3.0](LICENSE) © 2026
+
+プロプライエタリ製品での利用には商用ライセンスが必要です。
+
+📩 Instagram DM: [@maikadai](https://www.instagram.com/maikadai)
 
 ---
 
